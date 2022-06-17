@@ -27,12 +27,16 @@ public class MainMenyFragment extends Fragment {
         activity= (MainActivity) requireActivity();
     }
 
+    public void setText(String s){
+        amb.text.setText(s);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         amb=FragmentMainMenyBinding.inflate(inflater,container,false);
-        device=new MyBluetoothDevice(activity);
+        device=new MyBluetoothDevice(activity, this);
         getViewLifecycleOwner().getLifecycle().addObserver(device); //ne treba da bude povezano sa fragentom nego sa servisom sredi!!!
         return amb.getRoot();
     }
