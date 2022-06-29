@@ -17,10 +17,14 @@ import rs.ac.bg.etf.contacttracing.databinding.ActivityMainBinding;
 public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding amb;
+    public static final String INTENT_ACTION_NOTIFICATION = "NOTIFICATION";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        setContentView(R.layout.activity_main);
+        MyBluetoothDevice.permissionRequest(this);
+        MyBluetoothDevice.enableBluetooth(this);
+
         amb=ActivityMainBinding.inflate(getLayoutInflater());
         Security security=new Security();
         String s=security.generateTracingKey();

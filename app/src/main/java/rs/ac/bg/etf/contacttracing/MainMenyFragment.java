@@ -1,6 +1,7 @@
 package rs.ac.bg.etf.contacttracing;
 
 import android.bluetooth.BluetoothAdapter;
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,11 @@ public class MainMenyFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         activity= (MainActivity) requireActivity();
+        Intent intent = new Intent();
+        intent.setClass(activity, BluetoothService.class);
+        //postavljanje akcije
+        intent.setAction("START");
+        activity.startService(intent);
     }
 
     public void setText(String s){
@@ -36,8 +42,8 @@ public class MainMenyFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         amb=FragmentMainMenyBinding.inflate(inflater,container,false);
-        device=new MyBluetoothDevice(activity, this);
-        getViewLifecycleOwner().getLifecycle().addObserver(device); //ne treba da bude povezano sa fragentom nego sa servisom sredi!!!
+//        device=new MyBluetoothDevice(activity, this);
+//        getViewLifecycleOwner().getLifecycle().addObserver(device); //ne treba da bude povezano sa fragentom nego sa servisom sredi!!!
         return amb.getRoot();
     }
 
