@@ -16,7 +16,9 @@ import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
@@ -38,12 +40,16 @@ import androidx.lifecycle.LifecycleOwner;
 
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 
 public class MyBluetoothDevice implements DefaultLifecycleObserver {
@@ -60,6 +66,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
     private boolean started=false;
     private static final long SCAN_PERIOD = 10000;
     private static final long REST_PERIOD = 1000*60;
+    private static final String APP_UUID="CDB7950D-73F1-4D4D-8E47-C090502DBD63";
     private Timer timer;
 
     public void start(){
@@ -98,7 +105,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                     if(result.getDevice()!=null){
                         String mssg=null;
                         try{
-                            mssg=new String(result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString("CDB7950D-73F1-4D4D-8E47-C090502DBD63"))));
+                            mssg=new String(result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString(APP_UUID))));
 //                            Toast.makeText(context, mssg, Toast.LENGTH_SHORT).show();
                             if(!lemssgs.contains(mssg)) {
                                 lemssgs.add(mssg);
@@ -147,6 +154,21 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
 
     }
 
+    private byte[] getRPI(){
+        SharedPreferences sp=context.getSharedPreferences(MyKeyGenerator.shared_NAME, Context.MODE_PRIVATE);
+        String rpi=sp.getString(MyKeyGenerator.RPI_NAME,null);
+        if(rpi==null) return new byte[]{};
+        byte[] decodedKey= Base64.getDecoder().decode(sp.getString(MyKeyGenerator.RPI_KEY,null));
+        byte[] MAC=rpi.getBytes(StandardCharsets.UTF_8);
+        Log.d("len1",decodedKey.length+"");
+        byte[]output=new byte[13]; //maksimum koji moze da prihvati
+        for(int i=0;i<8;i++){
+            output[i]=decodedKey[i];
+            if(i<5)output[i+8]=MAC[i];
+        }
+        return output;
+    }
+
     private void add(){
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
@@ -154,10 +176,12 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                 .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
                 .setConnectable( false )
                 .build();
-        ParcelUuid pUuid = new ParcelUuid( UUID.fromString( "CDB7950D-73F1-4D4D-8E47-C090502DBD63" ) );
+        ParcelUuid pUuid = new ParcelUuid( UUID.fromString( APP_UUID ) );
+        byte[] rpi=getRPI();
+        Log.d("lenfinal",rpi.length+"");
         AdvertiseData data = new AdvertiseData.Builder()
 //                .addServiceUuid(pUuid)
-                .addServiceData( pUuid, "KEY_GEN".getBytes( Charset.forName( "UTF-8" ) ) )
+                .addServiceData( pUuid, rpi )
                 .build();
         if(!advertising){
             Handler handler=new Handler(Looper.getMainLooper());
@@ -174,7 +198,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
     private void scan(){
         bluetoothLeScanner= bluetoothAdapter.getBluetoothLeScanner();
         ScanFilter filter = new ScanFilter.Builder()
-                .setServiceData(new ParcelUuid(UUID.fromString( "CDB7950D-73F1-4D4D-8E47-C090502DBD63" )),new byte[]{0},new byte[]{0})
+                .setServiceData(new ParcelUuid(UUID.fromString( APP_UUID )),new byte[]{0},new byte[]{0})
                 .build();
         List<ScanFilter> filters=new ArrayList<>();
         filters.add( filter );

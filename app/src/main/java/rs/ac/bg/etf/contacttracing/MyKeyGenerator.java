@@ -23,6 +23,8 @@ public class MyKeyGenerator implements DefaultLifecycleObserver {
     private Timer timerRPI;
     private BluetoothService service;
     public static final String shared_NAME="TracingKey";
+    public static final String RPI_NAME="RPI";
+    public static final String RPI_KEY="RPI_key";
     Security security=new Security();
     private static final long daily=1000*60*60; //promeni ovo na 24h
     private static final long rpi=1000*60*15;
@@ -69,9 +71,8 @@ public class MyKeyGenerator implements DefaultLifecycleObserver {
                 h.post(()->{
                     ContactTracingDatabase.getInstance(service).getDao().getLatest().observe(service,dailyKey -> {
                         Security.RollingProximityIdentifier rpi=security.generateRPI(dailyKey.getDailyKey());
-                        sp.edit().putString("RPI",rpi.rpi)
-                                .putString("RPI_key", Base64.getEncoder().encodeToString(rpi.key.getEncoded()))
-                                .putLong("time",rpi.date.getTime())
+                        sp.edit().putString(RPI_NAME,rpi.rpi)
+                                .putString(RPI_KEY, Base64.getEncoder().encodeToString(rpi.key.getEncoded()))
                                 .apply();
                     });
                 });
