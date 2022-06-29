@@ -2,6 +2,7 @@ package rs.ac.bg.etf.contacttracing;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.Service;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -21,7 +22,6 @@ public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding amb;
     public static final String INTENT_ACTION_NOTIFICATION = "NOTIFICATION";
-    private static final String shared_NAME="TracingKey";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,7 +29,8 @@ public class MainActivity extends AppCompatActivity {
         MyBluetoothDevice.permissionRequest(this);
         MyBluetoothDevice.enableBluetooth(this);
         Security security=new Security();
-        SharedPreferences sp=getSharedPreferences(shared_NAME, Context.MODE_PRIVATE);
+
+        SharedPreferences sp=getSharedPreferences(MyKeyGenerator.shared_NAME, Context.MODE_PRIVATE);
         String tracingKey=sp.getString("KEY",null);
         if(tracingKey==null){
             //ovde treba ciljati na server i dohvatiti key koji je unique
@@ -37,12 +38,12 @@ public class MainActivity extends AppCompatActivity {
             sp.edit().putString("KEY",tracingKey).apply();
         }
 
-        Toast.makeText(this, tracingKey, Toast.LENGTH_SHORT).show();
+        //Toast.makeText(this, tracingKey, Toast.LENGTH_SHORT).show();
         amb=ActivityMainBinding.inflate(getLayoutInflater());
 
         String s=security.generateTracingKey();
         try {
-            String ss=security.generateDailyKey(s);
+            String ss=security.generateDailyKey(s).getDailyKey();
             Security.RollingProximityIdentifier id=security.generateRPI(ss);
             System.out.println(s);
             System.out.println(ss);

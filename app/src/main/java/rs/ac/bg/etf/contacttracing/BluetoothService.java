@@ -17,8 +17,10 @@ public class BluetoothService extends LifecycleService {
     private static final String NOTIFICATION_CHANNEL_ID = "workout-notification-channel";
     private static final int NOTIFICATION_ID = 1;
     private MyBluetoothDevice device;
+    private MyKeyGenerator keyGenerator;
     public BluetoothService() {
         device=new MyBluetoothDevice(this);
+        keyGenerator=new MyKeyGenerator();
     }
 
     @Override
@@ -26,6 +28,7 @@ public class BluetoothService extends LifecycleService {
         super.onCreate();
         Log.d("lifecycle-aware","Service->onCreate");
         getLifecycle().addObserver(device);
+        getLifecycle().addObserver(keyGenerator);
     }
 
 
@@ -36,6 +39,7 @@ public class BluetoothService extends LifecycleService {
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, getNotification()); //pokreni foreground service
         device.start();
+        keyGenerator.start(this);
         return START_STICKY;
 
     }
