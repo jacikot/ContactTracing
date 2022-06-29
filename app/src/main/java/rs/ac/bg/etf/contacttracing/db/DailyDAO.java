@@ -9,7 +9,7 @@ import androidx.room.Query;
 public interface DailyDAO{
 
     @Insert
-    long insert(DailyKey workout);
+    long insert(DailyKey key);
 
     @Query("SELECT * from DailyKey ORDER BY date DESC LIMIT 1")
     LiveData<DailyKey> getLatest();

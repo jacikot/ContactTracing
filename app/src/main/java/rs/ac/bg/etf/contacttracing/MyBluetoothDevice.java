@@ -44,12 +44,16 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
+
+import rs.ac.bg.etf.contacttracing.db.ContactTracingDatabase;
+import rs.ac.bg.etf.contacttracing.db.RPIKey;
 
 
 public class MyBluetoothDevice implements DefaultLifecycleObserver {
@@ -96,22 +100,24 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
 
         }
     };
-    private ArrayList<String> lemssgs=new ArrayList<>();
     private ScanCallback leScanCallback =
             new ScanCallback() {
                 @Override
                 public void onScanResult(int callbackType, ScanResult result) {
                     super.onScanResult(callbackType, result);
                     if(result.getDevice()!=null){
-                        String mssg=null;
                         try{
-                            mssg=new String(result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString(APP_UUID))));
-//                            Toast.makeText(context, mssg, Toast.LENGTH_SHORT).show();
-                            if(!lemssgs.contains(mssg)) {
-                                lemssgs.add(mssg);
-//                                fragment.setText(mssg);
-                                Toast.makeText(context, mssg, Toast.LENGTH_SHORT).show();
-                            }
+                            byte[]res=result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString(APP_UUID)));
+                            String key=new String(Arrays.copyOfRange(res,0,7));
+                            String mac=new String(Arrays.copyOfRange(res,8,13));
+                            RPIKey rpikey=new RPIKey(key,mac,new Date());
+
+                            ContactTracingDatabase.getInstance(context).getRPIDao().getExisting(key,mac,new Date(new Date().getTime()-1000*60*60*24*5)).observe(context,(rpik)->{
+                                if(rpik==null){
+                                    Toast.makeText(context, new String(res), Toast.LENGTH_SHORT).show();
+                                    ContactTracingDatabase.getInstance(context).getRPIDao().insert(rpikey);
+                                }
+                            });
                         }
                         catch (Exception e){ }
                     }
@@ -160,7 +166,6 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         if(rpi==null) return new byte[]{};
         byte[] decodedKey= Base64.getDecoder().decode(sp.getString(MyKeyGenerator.RPI_KEY,null));
         byte[] MAC=rpi.getBytes(StandardCharsets.UTF_8);
-        Log.d("len1",decodedKey.length+"");
         byte[]output=new byte[13]; //maksimum koji moze da prihvati
         for(int i=0;i<8;i++){
             output[i]=decodedKey[i];
@@ -178,7 +183,6 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                 .build();
         ParcelUuid pUuid = new ParcelUuid( UUID.fromString( APP_UUID ) );
         byte[] rpi=getRPI();
-        Log.d("lenfinal",rpi.length+"");
         AdvertiseData data = new AdvertiseData.Builder()
 //                .addServiceUuid(pUuid)
                 .addServiceData( pUuid, rpi )
@@ -206,11 +210,6 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                 .setScanMode( ScanSettings.SCAN_MODE_LOW_LATENCY )
                 .build();
         if(!scanning){
-//            Handler handler=new Handler(Looper.getMainLooper());
-//            handler.postDelayed(() -> {
-//                scanning = false;
-//                bluetoothLeScanner.stopScan(leScanCallback);
-//            }, REST_PERIOD-10000);
             scanning = true;
             bluetoothLeScanner.startScan(filters,settings,leScanCallback);
         } else {

@@ -8,13 +8,14 @@ import androidx.room.TypeConverters;
 import rs.ac.bg.etf.contacttracing.BluetoothService;
 
 @TypeConverters(value = {DateConverter.class})
-@Database(entities = {DailyKey.class}, version = 1, exportSchema = false)
+@Database(entities = {DailyKey.class, RPIKey.class}, version = 1, exportSchema = false)
 abstract public class ContactTracingDatabase extends RoomDatabase {
 
     public abstract DailyDAO getDao();
+    public abstract RPIDAO getRPIDao();
 
     private static ContactTracingDatabase instance=null;
-    private static final String DBname="contact-tracing-db";
+    private static final String DBname="contact-tracing";
 
     public static ContactTracingDatabase getInstance(BluetoothService service){
         if(instance==null){
