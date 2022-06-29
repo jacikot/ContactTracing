@@ -17,6 +17,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -29,6 +30,8 @@ import android.widget.Toast;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
@@ -39,6 +42,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 
 public class MyBluetoothDevice implements DefaultLifecycleObserver {
@@ -63,10 +67,10 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
             Toast.makeText(context, "Device doesn't support Bluetooth", Toast.LENGTH_SHORT).show();
             return;
         }
-        if( !BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported() ) {
-            Toast.makeText(context, "Multiple advertisement not supported", Toast.LENGTH_SHORT).show();
-            return;
-        }
+//        if( !BluetoothAdapter.getDefaultAdapter().isMultipleAdvertisementSupported() ) {
+//            Toast.makeText(context, "Multiple advertisement not supported", Toast.LENGTH_SHORT).show();
+//            return;
+//        }
         if (!bluetoothAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             activityResultLauncher.launch(enableBtIntent);
@@ -119,7 +123,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
             public void run() {
                 scan();
             }
-        },0,REST_PERIOD);
+        },0,1000*5);
 
     }
 
@@ -144,7 +148,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         ParcelUuid pUuid = new ParcelUuid( UUID.fromString( "CDB7950D-73F1-4D4D-8E47-C090502DBD63" ) );
         AdvertiseData data = new AdvertiseData.Builder()
 //                .addServiceUuid(pUuid)
-                .addServiceData( pUuid, "DataH".getBytes( Charset.forName( "UTF-8" ) ) )
+                .addServiceData( pUuid, "DataZ".getBytes( Charset.forName( "UTF-8" ) ) )
                 .build();
         AdvertiseCallback advertisingCallback = new AdvertiseCallback() {
             @Override
@@ -185,16 +189,17 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                 .setScanMode( ScanSettings.SCAN_MODE_LOW_LATENCY )
                 .build();
         if(!scanning){
-            Handler handler=new Handler(Looper.getMainLooper());
-            handler.postDelayed(() -> {
-                scanning = false;
-                bluetoothLeScanner.stopScan(leScanCallback);
-            }, REST_PERIOD-10000);
+//            Handler handler=new Handler(Looper.getMainLooper());
+//            handler.postDelayed(() -> {
+//                scanning = false;
+//                bluetoothLeScanner.stopScan(leScanCallback);
+//            }, REST_PERIOD-10000);
             scanning = true;
             bluetoothLeScanner.startScan(filters,settings,leScanCallback);
         } else {
-            scanning = false;
+//            scanning = false;
             bluetoothLeScanner.stopScan(leScanCallback);
+            bluetoothLeScanner.startScan(filters,settings,leScanCallback);
         }
     }
     public MyBluetoothDevice(MainActivity context, MainMenyFragment fragment) {
@@ -218,17 +223,17 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                             Boolean coarseLocationGranted = result.getOrDefault(
                                     Manifest.permission.ACCESS_COARSE_LOCATION,false);
                             if (fineLocationGranted != null && fineLocationGranted) {
-                                // Precise location access granted.
+                                System.out.println("fine location ok");
                             } else if (coarseLocationGranted != null && coarseLocationGranted) {
-                                // Only approximate location access granted.
+                                System.out.println("corse location ok");
                             } else {
-                                // No location access granted.
+                                System.err.println("no access");
                             }
                         }
                 );
         locationPermissionRequest.launch(new String[] {
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION
+                Manifest.permission.ACCESS_COARSE_LOCATION,
         });
     }
 }
