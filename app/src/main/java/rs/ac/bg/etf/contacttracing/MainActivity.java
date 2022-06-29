@@ -2,8 +2,11 @@ package rs.ac.bg.etf.contacttracing;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.widget.Toast;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemNotFoundException;
@@ -18,15 +21,25 @@ public class MainActivity extends AppCompatActivity {
 
     ActivityMainBinding amb;
     public static final String INTENT_ACTION_NOTIFICATION = "NOTIFICATION";
+    private static final String shared_NAME="TracingKey";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 //        setContentView(R.layout.activity_main);
         MyBluetoothDevice.permissionRequest(this);
         MyBluetoothDevice.enableBluetooth(this);
-
-        amb=ActivityMainBinding.inflate(getLayoutInflater());
         Security security=new Security();
+        SharedPreferences sp=getSharedPreferences(shared_NAME, Context.MODE_PRIVATE);
+        String tracingKey=sp.getString("KEY",null);
+        if(tracingKey==null){
+            //ovde treba ciljati na server i dohvatiti key koji je unique
+            tracingKey=security.generateTracingKey();
+            sp.edit().putString("KEY",tracingKey).apply();
+        }
+
+        Toast.makeText(this, tracingKey, Toast.LENGTH_SHORT).show();
+        amb=ActivityMainBinding.inflate(getLayoutInflater());
+
         String s=security.generateTracingKey();
         try {
             String ss=security.generateDailyKey(s);

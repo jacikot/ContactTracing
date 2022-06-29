@@ -157,7 +157,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         ParcelUuid pUuid = new ParcelUuid( UUID.fromString( "CDB7950D-73F1-4D4D-8E47-C090502DBD63" ) );
         AdvertiseData data = new AdvertiseData.Builder()
 //                .addServiceUuid(pUuid)
-                .addServiceData( pUuid, "DataJA".getBytes( Charset.forName( "UTF-8" ) ) )
+                .addServiceData( pUuid, "DataMI".getBytes( Charset.forName( "UTF-8" ) ) )
                 .build();
         if(!advertising){
             Handler handler=new Handler(Looper.getMainLooper());
