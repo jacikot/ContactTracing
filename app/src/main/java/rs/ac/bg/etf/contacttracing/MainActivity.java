@@ -40,6 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Toast.makeText(this, tracingKey, Toast.LENGTH_SHORT).show();
         amb=ActivityMainBinding.inflate(getLayoutInflater());
+        setContentView(amb.getRoot());
 
         String s=security.generateTracingKey();
         try {

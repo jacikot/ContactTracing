@@ -34,7 +34,7 @@ public class MainMenyFragment extends Fragment {
     }
 
     public void setText(String s){
-        amb.text.setText(s);
+//        amb.text.setText(s);
     }
 
     @Override

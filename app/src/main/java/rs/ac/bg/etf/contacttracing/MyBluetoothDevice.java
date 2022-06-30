@@ -20,6 +20,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
@@ -111,7 +112,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                             String key=new String(Arrays.copyOfRange(res,0,7));
                             String mac=new String(Arrays.copyOfRange(res,8,13));
                             RPIKey rpikey=new RPIKey(key,mac,new Date());
-
+                            Log.d("lifecycle-aware","scanning works");
                             ContactTracingDatabase.getInstance(context).getRPIDao().getExisting(key,mac,new Date(new Date().getTime()-1000*60*60*24*5)).observe(context,(rpik)->{
                                 if(rpik==null){
                                     Toast.makeText(context, new String(res), Toast.LENGTH_SHORT).show();
@@ -202,8 +203,9 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
     private void scan(){
         bluetoothLeScanner= bluetoothAdapter.getBluetoothLeScanner();
         ScanFilter filter = new ScanFilter.Builder()
-                .setServiceData(new ParcelUuid(UUID.fromString( APP_UUID )),new byte[]{0},new byte[]{0})
-                .build();
+//                .setServiceUuid(new ParcelUuid(UUID.fromString( APP_UUID )),ParcelUuid.fromString("FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF")).build();
+                .setServiceData(new ParcelUuid(UUID.fromString( APP_UUID )),new byte[13],new byte[13]).build();
+//                ;
         List<ScanFilter> filters=new ArrayList<>();
         filters.add( filter );
         ScanSettings settings = new ScanSettings.Builder()
@@ -231,6 +233,10 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                                     Manifest.permission.ACCESS_FINE_LOCATION, false);
                             Boolean coarseLocationGranted = result.getOrDefault(
                                     Manifest.permission.ACCESS_COARSE_LOCATION,false);
+//                            Boolean LocationGranted = result.getOrDefault(
+//                            Manifest.permission.ACCESS_BACKGROUND_LOCATION,false);
+//                            if(!LocationGranted) System.out.println("bg location failed");
+                            requestBackgroundLocationPermission(activity);
                             if (fineLocationGranted != null && fineLocationGranted) {
                                 System.out.println("fine location ok");
                             } else if (coarseLocationGranted != null && coarseLocationGranted) {
@@ -242,8 +248,16 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                 );
         locationPermissionRequest.launch(new String[] {
                 Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
         });
+    }
+
+    private static void requestBackgroundLocationPermission(MainActivity activity) {
+        ActivityCompat.requestPermissions(activity,
+                new String[]{
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION},
+                66
+        );
     }
 
     public static void enableBluetooth(MainActivity activity){
