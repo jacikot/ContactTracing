@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import rs.ac.bg.etf.contacttracing.databinding.FragmentMainMenyBinding;
+import rs.ac.bg.etf.contacttracing.rest.RestService;
 
 public class MainMenyFragment extends Fragment {
     private FragmentMainMenyBinding amb;
@@ -42,6 +43,9 @@ public class MainMenyFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         amb=FragmentMainMenyBinding.inflate(inflater,container,false);
+        amb.check.setOnClickListener(e->{
+            new RestService().doSth(activity);
+        });
 //        device=new MyBluetoothDevice(activity, this);
 //        getViewLifecycleOwner().getLifecycle().addObserver(device); //ne treba da bude povezano sa fragentom nego sa servisom sredi!!!
         return amb.getRoot();
