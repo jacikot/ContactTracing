@@ -10,6 +10,7 @@ import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
 
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,6 +54,7 @@ public class MyKeyGenerator implements DefaultLifecycleObserver {
         }
         return tracingKey;
     }
+
     public void start(BluetoothService service){
         if(started) return;
         started=true;
@@ -72,7 +74,7 @@ public class MyKeyGenerator implements DefaultLifecycleObserver {
                     ContactTracingDatabase.getInstance(service).getDao().getLatest().observe(service,dailyKey -> {
                         Security.RollingProximityIdentifier rpi=security.generateRPI(dailyKey.getDailyKey());
                         sp.edit().putString(RPI_NAME,rpi.rpi)
-                                .putString(RPI_KEY, Base64.getEncoder().encodeToString(rpi.key.getEncoded()))
+                                .putString(RPI_KEY, new String(rpi.key.getEncoded(), StandardCharsets.ISO_8859_1))
                                 .apply();
                     });
                 });

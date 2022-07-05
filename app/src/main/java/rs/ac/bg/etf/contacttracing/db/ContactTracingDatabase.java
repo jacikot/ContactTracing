@@ -15,7 +15,7 @@ abstract public class ContactTracingDatabase extends RoomDatabase {
     public abstract RPIDAO getRPIDao();
 
     private static ContactTracingDatabase instance=null;
-    private static final String DBname="contact-tracing";
+    private static final String DBname="my-contact-tracing";
 
     public static ContactTracingDatabase getInstance(BluetoothService service){
         if(instance==null){

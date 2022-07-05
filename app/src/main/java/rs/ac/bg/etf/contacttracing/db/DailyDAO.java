@@ -5,6 +5,8 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
 
+import java.util.List;
+
 @Dao
 public interface DailyDAO{
 
@@ -15,5 +17,5 @@ public interface DailyDAO{
     LiveData<DailyKey> getLatest();
 
     @Query("SELECT * from DailyKey ORDER BY date DESC LIMIT :n")
-    LiveData<DailyKey> getLastNDays(int n);
+    LiveData<List<DailyKey>> getLastNDays(int n);
 }

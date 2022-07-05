@@ -13,8 +13,8 @@ public interface RPIDAO {
     @Insert
     long insert(RPIKey key);
 
-    @Query("SELECT * from RPIKey WHERE date>:date")
-    LiveData<List<RPIKey>> getAllAfter(Date date);
+    @Query("SELECT * from RPIKey WHERE date>=:date and date<=:d2")
+    LiveData<List<RPIKey>> getAllBetween(Date date, Date d2);
 
     @Query("SELECT * from RPIKey WHERE `key`=:key and mac=:mac and date>:date")
     LiveData<RPIKey> getExisting(String key, String mac, Date date);

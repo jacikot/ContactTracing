@@ -1,6 +1,5 @@
 package rs.ac.bg.etf.contacttracing;
 
-import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -15,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import rs.ac.bg.etf.contacttracing.databinding.FragmentMainMenyBinding;
+import rs.ac.bg.etf.contacttracing.db.ContactTracingDatabase;
 import rs.ac.bg.etf.contacttracing.rest.RestService;
 
 public class MainMenyFragment extends Fragment {
@@ -43,8 +43,23 @@ public class MainMenyFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         amb=FragmentMainMenyBinding.inflate(inflater,container,false);
+        amb.alert.setOnClickListener(e->{
+
+            Intent intent = new Intent();
+            intent.setClass(activity, BluetoothService.class);
+            //postavljanje akcije
+            intent.setAction("REGISTER");
+            activity.startService(intent);
+//            ContactTracingDatabase.getInstance()
+//            new RestService().registerInfected(activity);
+        });
+
         amb.check.setOnClickListener(e->{
-            new RestService().doSth(activity);
+            Intent intent = new Intent();
+            intent.setClass(activity, BluetoothService.class);
+            //postavljanje akcije
+            intent.setAction("GET");
+            activity.startService(intent);
         });
 //        device=new MyBluetoothDevice(activity, this);
 //        getViewLifecycleOwner().getLifecycle().addObserver(device); //ne treba da bude povezano sa fragentom nego sa servisom sredi!!!

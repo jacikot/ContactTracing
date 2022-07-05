@@ -6,16 +6,29 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.core.app.NotificationChannelCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.LifecycleService;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
+import java.util.Date;
+import java.util.List;
+
+import rs.ac.bg.etf.contacttracing.db.ContactTracingDatabase;
+import rs.ac.bg.etf.contacttracing.db.DailyKey;
+import rs.ac.bg.etf.contacttracing.db.RPIKey;
+import rs.ac.bg.etf.contacttracing.rest.RegisteredInfectedKey;
+import rs.ac.bg.etf.contacttracing.rest.RestService;
 
 public class BluetoothService extends LifecycleService {
     private static final String NOTIFICATION_CHANNEL_ID = "workout-notification-channel";
     private static final int NOTIFICATION_ID = 1;
+    private static final long period=1000*60*60*24*5;
     private MyBluetoothDevice device;
     private MyKeyGenerator keyGenerator;
     public BluetoothService() {
@@ -38,12 +51,43 @@ public class BluetoothService extends LifecycleService {
         Log.d("lifecycle-aware", "Service->onStartCommand");
         createNotificationChannel();
         startForeground(NOTIFICATION_ID, getNotification()); //pokreni foreground service
-        device.start();
-        keyGenerator.start(this);
+        switch (intent.getAction()){
+            case "START":
+                device.start();
+                keyGenerator.start(this);
+                break;
+            case "REGISTER":
+                ContactTracingDatabase.getInstance(this).getDao().getLastNDays(5).observe(this,list->{
+                    new RestService().registerInfected(this, list);
+                });
+                break;
+            case "GET":
+                new RestService().getInfected(this,period).observe(this,list->{
+                    checkExposure(list).observe(this,e->{
+                        Toast.makeText(this, "EXPOSED", Toast.LENGTH_SHORT).show();
+                    });
+                    //promeni ovo
+
+                });
+                break;
+
+        }
+
         return START_STICKY;
 
     }
 
+    private LiveData<Boolean> checkExposure(List<RegisteredInfectedKey> list){
+        MutableLiveData<Boolean> b=new MutableLiveData<>();
+        list.forEach(infected->{
+            ContactTracingDatabase.getInstance(this).getRPIDao().getAllBetween(new Date(infected.date), new Date(infected.date+1000*60*60*24)).observe(this, rpis->{
+                for (RPIKey rpi:rpis){
+                    if(new Security().validateRPI(rpi,infected) && b.getValue()==null) b.postValue(true);
+                }
+            });
+        });
+        return b;
+    }
 
     private Notification getNotification() {
 

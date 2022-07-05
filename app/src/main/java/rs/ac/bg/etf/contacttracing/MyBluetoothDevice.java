@@ -109,13 +109,13 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                     if(result.getDevice()!=null){
                         try{
                             byte[]res=result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString(APP_UUID)));
-                            String key=new String(Arrays.copyOfRange(res,0,7));
-                            String mac=new String(Arrays.copyOfRange(res,8,13));
+                            String key=new String(Arrays.copyOfRange(res,0,8),StandardCharsets.ISO_8859_1);
+                            String mac=new String(Arrays.copyOfRange(res,8,13),StandardCharsets.ISO_8859_1);
                             RPIKey rpikey=new RPIKey(key,mac,new Date());
-                            Log.d("lifecycle-aware","scanning works");
+                            Log.d("lifecycle-aware", Arrays.toString(res) +"");
                             ContactTracingDatabase.getInstance(context).getRPIDao().getExisting(key,mac,new Date(new Date().getTime()-1000*60*60*24*5)).observe(context,(rpik)->{
                                 if(rpik==null){
-                                    Toast.makeText(context, new String(res), Toast.LENGTH_SHORT).show();
+                                    Toast.makeText(context, new String(res,StandardCharsets.ISO_8859_1), Toast.LENGTH_SHORT).show();
                                     ContactTracingDatabase.getInstance(context).getRPIDao().insert(rpikey);
                                 }
                             });
@@ -165,14 +165,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         SharedPreferences sp=context.getSharedPreferences(MyKeyGenerator.shared_NAME, Context.MODE_PRIVATE);
         String rpi=sp.getString(MyKeyGenerator.RPI_NAME,null);
         if(rpi==null) return new byte[]{};
-        byte[] decodedKey= Base64.getDecoder().decode(sp.getString(MyKeyGenerator.RPI_KEY,null));
-        byte[] MAC=rpi.getBytes(StandardCharsets.UTF_8);
-        byte[]output=new byte[13]; //maksimum koji moze da prihvati
-        for(int i=0;i<8;i++){
-            output[i]=decodedKey[i];
-            if(i<5)output[i+8]=MAC[i];
-        }
-        return output;
+        return new Security().createRPIMSSG(rpi,sp.getString(MyKeyGenerator.RPI_KEY,null));
     }
 
     private void add(){
