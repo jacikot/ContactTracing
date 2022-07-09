@@ -61,7 +61,6 @@ public class Security {
             Date date=new Date();
             byte[] bytes = (UUID).getBytes(StandardCharsets.ISO_8859_1);
             byte[] macResult = mac.doFinal(bytes);
-            Log.d("length",""+macResult.length);
             return new DailyKey(new String(macResult, StandardCharsets.ISO_8859_1),date);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             e.printStackTrace();

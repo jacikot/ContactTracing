@@ -13,9 +13,6 @@ import retrofit2.http.POST;
 import retrofit2.http.Query;
 
 public interface CentralServiceApi {
-
-
-    //oo iza baznog url
     @POST("infected/register")
     Call<Void> register(
             @Query("keys") String []keys,
@@ -25,14 +22,5 @@ public interface CentralServiceApi {
     @POST("infected/getInfected")
     Call<List<RegisteredInfectedKey>> getInfected(
             @Query("period") Long period
-    );
-
-
-    @GET("weather")
-    Call<DiagnosedPositive> getCurrentWeather(
-            @Query("appid") String apiKey,
-            @Query("lat") double latitude,
-            @Query("lon") double longitude,
-            @Query("units") String units
     );
 }

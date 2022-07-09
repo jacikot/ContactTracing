@@ -3,10 +3,6 @@ package rs.ac.bg.etf.contacttracing;
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothGatt;
-import android.bluetooth.BluetoothGattCallback;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
@@ -19,39 +15,28 @@ import android.bluetooth.le.ScanSettings;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.lifecycle.DefaultLifecycleObserver;
 import androidx.lifecycle.LifecycleOwner;
 
 
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import rs.ac.bg.etf.contacttracing.db.ContactTracingDatabase;
 import rs.ac.bg.etf.contacttracing.db.RPIKey;
@@ -70,7 +55,8 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
     private static boolean bluetoothActivated;
     private boolean started=false;
     private static final long SCAN_PERIOD = 10000;
-    private static final long REST_PERIOD = 1000*60;
+    private static final long REST_PERIOD = 1000*60*15;
+    private static final long ADD_PERIOD = 1000*60*15-10000;
     private static final String APP_UUID="CDB7950D-73F1-4D4D-8E47-C090502DBD63";
     private Timer timer;
 
@@ -101,6 +87,20 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
 
         }
     };
+    protected static double calculateAccuracy(int txPower, double rssi) {
+        if (rssi == 0) {
+            return -1.0; // if we cannot determine accuracy, return -1.
+        }
+
+        double ratio = rssi*1.0/txPower;
+        if (ratio < 1.0) {
+            return Math.pow(ratio,10);
+        }
+        else {
+            double accuracy =  (0.89976)*Math.pow(ratio,7.7095) + 0.111;
+            return accuracy;
+        }
+    }
     private ScanCallback leScanCallback =
             new ScanCallback() {
                 @Override
@@ -108,6 +108,9 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
                     super.onScanResult(callbackType, result);
                     if(result.getDevice()!=null){
                         try{
+                            double distance=calculateAccuracy(-70,result.getRssi());
+                            Log.d("distance",distance+"");
+                            if(distance!=-1 && distance>1) return;
                             byte[]res=result.getScanRecord().getServiceData(new ParcelUuid(UUID.fromString(APP_UUID)));
                             String key=new String(Arrays.copyOfRange(res,0,8),StandardCharsets.ISO_8859_1);
                             String mac=new String(Arrays.copyOfRange(res,8,13),StandardCharsets.ISO_8859_1);
@@ -155,7 +158,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                add();
+                advertise();
             }
         },0,REST_PERIOD);
 
@@ -168,7 +171,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         return new Security().createRPIMSSG(rpi,sp.getString(MyKeyGenerator.RPI_KEY,null));
     }
 
-    private void add(){
+    private void advertise(){
         advertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
         AdvertiseSettings settings = new AdvertiseSettings.Builder()
                 .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
@@ -178,7 +181,6 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
         ParcelUuid pUuid = new ParcelUuid( UUID.fromString( APP_UUID ) );
         byte[] rpi=getRPI();
         AdvertiseData data = new AdvertiseData.Builder()
-//                .addServiceUuid(pUuid)
                 .addServiceData( pUuid, rpi )
                 .build();
         if(!advertising){
@@ -186,7 +188,7 @@ public class MyBluetoothDevice implements DefaultLifecycleObserver {
             handler.postDelayed(() -> {
                 advertising = false;
                 advertiser.stopAdvertising(advertisingCallback);
-            }, REST_PERIOD-10000);
+            }, ADD_PERIOD);
             advertising = true;
             advertiser.startAdvertising( settings, data, advertisingCallback );
         }
